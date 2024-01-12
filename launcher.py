@@ -11,6 +11,7 @@ from editor import Editor
 from PIL import Image, ImageTk
 import portablemc.standard
 import requests
+import sv_ttk
 
 
 class Runner(portablemc.standard.StreamRunner):
@@ -88,21 +89,18 @@ class LauncherApp(tkinter.Tk):
             Image.open("assets/moon.png").resize((20, 20))
         )
 
-        # load forest themes
-        self.tk.call("source", "assets/theme/forest-dark.tcl")
-        self.tk.call("source", "assets/theme/forest-light.tcl")
-        self.style = tkinter.ttk.Style(self)
-        self.current_theme = None
-
         # add toolbar
         self.toolbar_frame = tkinter.ttk.Frame(self)
         self.toolbar_frame.pack(fill="x")
 
         # add light/dark mode button
         self.theme_button = tkinter.ttk.Button(
-            self.toolbar_frame, text="", command=self.toggle_theme
+            self.toolbar_frame,
+            text="",
+            command=self.toggle_theme,
+            style="Accent.TButton",
         )
-        self.theme_button.pack(side="right", padx=5, pady=5)
+        self.theme_button.pack(side="left", padx=5, pady=5)
 
         # tabbed page container
         self.content_frame = tkinter.ttk.Notebook(self)
@@ -116,7 +114,8 @@ class LauncherApp(tkinter.Tk):
         self.editor = Editor(self.content_frame)
         self.content_frame.add(self.editor, text="Skin Editor")
 
-        self.toggle_theme()
+        sv_ttk.set_theme("dark")
+        self.theme_button.config(image=self.sun_image)
 
     def create_instance(self, name, version, loader=None, loader_version=None):
         instance_id = str(uuid.uuid4())
@@ -200,17 +199,15 @@ class LauncherApp(tkinter.Tk):
         return out
 
     def toggle_theme(self):
-        if self.current_theme == "forest-dark":
-            self.current_theme = "forest-light"
+        if self.tk.call("ttk::style", "theme", "use") == "sun-valley-dark":
+            self.tk.call("set_theme", "light")
             self.editor.set_background_color((0.9, 0.9, 0.9))
             self.theme_button.config(image=self.moon_image)
 
         else:
-            self.current_theme = "forest-dark"
+            self.tk.call("set_theme", "dark")
             self.editor.set_background_color((0.15, 0.15, 0.15))
             self.theme_button.config(image=self.sun_image)
-
-        self.style.theme_use(self.current_theme)
 
 
 if __name__ == "__main__":
