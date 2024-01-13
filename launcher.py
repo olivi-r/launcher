@@ -37,36 +37,6 @@ class Runner(portablemc.standard.StreamRunner):
             print(event.strip())
 
 
-class Watcher(portablemc.standard.Watcher):
-    def __init__(self, output):
-        super().__init__()
-        self.output = output
-
-    def handle(self, event) -> None:
-        if isinstance(event, portablemc.standard.DownloadStartEvent):
-            self.download_size = event.size
-
-        elif isinstance(event, portablemc.standard.DownloadProgressEvent):
-            complete = round(10 * (event.size / self.download_size))
-            progress = (
-                f"\x1b[32m"
-                + "-" * complete
-                + "\x1b[31m"
-                + "-" * (10 - complete)
-                + "\x1b[0m"
-            )
-            print(
-                f"Download [{progress}] {event.size / 2 ** 20:.1f}M/{self.download_size / 2 ** 20:.1f}M {event.entry.name}",
-                end="\r",
-            )
-
-        elif isinstance(event, portablemc.standard.DownloadCompleteEvent):
-            print()
-
-        else:
-            print("event:", event)
-
-
 class LauncherApp(tkinter.Tk):
     default_jvm_args = [
         "-Xmx2G",
@@ -115,6 +85,7 @@ class LauncherApp(tkinter.Tk):
         self.content_frame.add(self.editor, text="Skin Editor")
 
         sv_ttk.set_theme("dark")
+        self.editor.set_background_color((0.15, 0.15, 0.15))
         self.theme_button.config(image=self.sun_image)
 
     def create_instance(self, name, version, loader=None, loader_version=None):

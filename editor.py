@@ -11,24 +11,124 @@ from PIL import Image
 
 
 class NewPopup(tkinter.ttk.Frame):
+    background_color = (0.15, 0.15, 0.15)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, borderwidth=1, relief="solid", **kwargs)
 
         content = tkinter.ttk.Frame(self)
-        content.pack(fill="both", expand=1, padx=10, pady=10)
+        content.pack(padx=10, pady=10)
 
         # name
         tkinter.ttk.Label(content, text="Name:").grid(row=0, column=0)
-        name = tkinter.ttk.Entry(content)
-        name.grid(row=0, column=1, padx=10, columnspan=3, sticky="nesw")
+        self.name = tkinter.ttk.Entry(content)
+        self.name.grid(row=0, column=1, padx=10, columnspan=2, sticky="nesw")
 
         # slim
         self.slim = tkinter.IntVar(content, 0)
-        tkinter.ttk.Checkbutton(content, text="Slim arms", variable=self.slim).grid(
-            row=1, column=0, columnspan=2
-        )
+        tkinter.ttk.Checkbutton(
+            content, text="Slim arms", variable=self.slim, command=self.update_preview
+        ).grid(row=1, column=0, columnspan=2)
 
-        tkinter.ttk.Button(content, text="Use a template").grid(row=1, column=2)
+        # templates
+        self.template = tkinter.IntVar(self, 0)
+        tkinter.ttk.Radiobutton(
+            content,
+            text="Use a template",
+            variable=self.template,
+            value=0,
+            command=self.update_preview,
+        ).grid(row=1, column=2, sticky="w", padx=10, pady=10)
+        tkinter.ttk.Radiobutton(
+            content,
+            text="Use a default skin",
+            variable=self.template,
+            value=1,
+            command=self.update_preview,
+        ).grid(row=2, column=2, sticky="w", padx=10)
+
+        self.template_choice = tkinter.ttk.Combobox(
+            content,
+            values=[
+                "Steve",
+                "Alex",
+                "Ari",
+                "Kai",
+                "Noor",
+                "Sunny",
+                "Zuri",
+                "Efe",
+                "Makena",
+            ],
+            state="disabled",
+            width=8,
+        )
+        self.template_choice.current(0)
+        self.template_choice.grid(row=2, column=3)
+        self.template_choice.bind("<FocusIn>", lambda _: self.update_preview())
+
+        self.preview = SkinView(
+            self,
+            slim=False,
+            skin_img=self.get_template_skin(False),
+            background_color=self.background_color,
+        )
+        self.preview.animate = True
+        self.preview.pack(fill="both", expand=1, padx=10)
+
+        # buttons
+        button_panel = tkinter.ttk.Frame(self)
+        button_panel.pack(pady=10)
+        tkinter.ttk.Button(button_panel, text="Cancel", command=self.close).pack(
+            side="left", padx=20
+        )
+        tkinter.ttk.Button(
+            button_panel, text="Create", command=self.create, style="Accent.TButton"
+        ).pack(side="right", padx=20)
+
+    def create(self):
+        slim = self.slim.get()
+        if self.template.get():
+            skin = self.get_default_skin(self.template_choice.get(), slim)
+
+        else:
+            skin = self.get_template_skin(slim)
+
+        name = self.name.get() or "Untitled"
+        self.master.create_tab(name, skin, slim)
+        self.close()
+
+    def close(self):
+        self.master.popups.pop(self.master.popups.index(self))
+        self.destroy()
+
+    def get_template_skin(self, arms):
+        arms = "slim" if arms else "classic"
+        with open("skins.json", "r") as fp:
+            return Image.open(
+                io.BytesIO(base64.b64decode(json.load(fp)["template"][arms]))
+            )
+
+    def get_default_skin(self, name, arms):
+        arms = "slim" if arms else "classic"
+        with open("skins.json", "r") as fp:
+            return Image.open(
+                io.BytesIO(base64.b64decode(json.load(fp)["default"][name][arms]))
+            )
+
+    def update_preview(self):
+        self.template_choice.select_clear()
+        self.preview.slim = self.slim.get()
+
+        if self.template.get():
+            self.template_choice.config(state="readonly")
+            self.preview.set_skin(
+                self.get_default_skin(self.template_choice.get(), self.slim.get())
+            )
+
+        else:
+            self.template_choice.config(state="disabled")
+            self.preview.set_skin(self.get_template_skin(self.slim.get()))
 
     def show(self):
         self.place(anchor="c", relx=0.5, rely=0.5, width=400, height=350)
@@ -37,6 +137,8 @@ class NewPopup(tkinter.ttk.Frame):
 class Editor(tkinter.ttk.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.popups = []
 
         self.left_frame = tkinter.ttk.Frame(self)
         self.left_frame.pack(side="left", fill="y")
@@ -50,10 +152,10 @@ class Editor(tkinter.ttk.Frame):
         self.buttons = tkinter.ttk.Frame(self.viewport)
         self.buttons.pack(fill="x", pady=5)
 
-        tkinter.ttk.Button(self.buttons, text="New Skin", command=self.new_tab).pack(
-            side="left", padx=5
+        tkinter.ttk.Button(self.buttons, text="New Skin", command=self.popup).pack(
+            side="left"
         )
-        tkinter.ttk.Button(self.buttons, text="Load Skin").pack(side="left", padx=5)
+        tkinter.ttk.Button(self.buttons, text="Load Skin").pack(side="left", padx=10)
 
         self.tabs = tkinter.ttk.Notebook(self.viewport, width=500, height=500)
         self.tabs.pack(side="bottom", fill="both", expand=1)
@@ -160,30 +262,22 @@ class Editor(tkinter.ttk.Frame):
             command=self.ortho_cb,
         ).pack(side="bottom", anchor="w")
 
+    def popup(self):
+        p = NewPopup(self)
+        self.popups.append(p)
+        p.show()
+
     def set_background_color(self, color):
         self.background_color = color
+
+        NewPopup.background_color = color
+        for popup in self.popups:
+            popup.preview.background_color = color
 
         for view in self.views:
             view.background_color = self.background_color
 
-    def new_tab(self):
-        NewPopup(self).show()
-
-        with open("skins.json", "r") as fp:
-            default_skins = json.load(fp)["default"]
-            slim = random.randint(0, 1)
-            skin = Image.open(
-                io.BytesIO(
-                    base64.b64decode(
-                        default_skins[random.choice(list(default_skins))][
-                            ["classic", "slim"][slim]
-                        ]
-                    )
-                )
-            )
-            self.create_tab(skin, slim)
-
-    def create_tab(self, skin: Image, slim: bool, cape: Image = None):
+    def create_tab(self, name: str, skin: Image, slim: bool, cape: Image = None):
         view = SkinView(
             self.tabs,
             slim=slim,
@@ -198,7 +292,7 @@ class Editor(tkinter.ttk.Frame):
         view.animate = True
 
         self.views.append(view)
-        self.tabs.add(view, text=f"Skin {len(self.views)}", sticky="nesw")
+        self.tabs.add(view, text=name, sticky="nesw")
         self.tabs.select(len(self.tabs.tabs()) - 1)
 
     def update_tabs(self, event=None):

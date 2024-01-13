@@ -217,13 +217,7 @@ class SkinView(OpenGLFrame):
             0, 16, -3.5, 0, 16, 1.5, 10, 16, 1, 0, 24, -3, -15, 180, 0, 0, 0
         )
 
-        try:
-            self.skin_img = skin_img.size + (
-                np.array(list(skin_img.convert("RGBA").getdata()), np.uint8),
-            )
-
-        finally:
-            skin_img.close()
+        self.set_skin(skin_img)
 
         self.cape_img = cape_img
         if self.has_cape:
@@ -259,6 +253,15 @@ class SkinView(OpenGLFrame):
         self.y_off = 0
 
         self.walk_speed = 20
+
+    def set_skin(self, skin_img):
+        try:
+            self.skin_img = skin_img.size + (
+                np.array(list(skin_img.convert("RGBA").getdata()), np.uint8),
+            )
+
+        finally:
+            skin_img.close()
 
     def set_pos(self, event):
         self.prev = [event.x, event.y]
