@@ -5,6 +5,7 @@ numpy==1.26.3
 pillow==10.2.0
 portablemc==4.1.0
 PyOpenGL==3.1.7
+PyOpenGL-accelerate==3.1.7
 pyopengltk==0.0.4
 requests==2.31.0
 sv-ttk==2.5.5
