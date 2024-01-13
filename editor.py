@@ -70,7 +70,7 @@ class NewPopup(tkinter.ttk.Frame):
         self.preview = SkinView(
             self,
             slim=False,
-            skin_img=self.get_template_skin(False),
+            skin_img=Editor.get_template_skin(False),
             background_color=self.background_color,
         )
         self.preview.animate = True
@@ -89,10 +89,10 @@ class NewPopup(tkinter.ttk.Frame):
     def create(self):
         slim = self.slim.get()
         if self.template.get():
-            skin = self.get_default_skin(self.template_choice.get(), slim)
+            skin = Editor.get_default_skin(self.template_choice.get(), slim)
 
         else:
-            skin = self.get_template_skin(slim)
+            skin = Editor.get_template_skin(slim)
 
         name = self.name.get() or "Untitled"
         self.master.create_tab(name, skin, slim)
@@ -102,20 +102,6 @@ class NewPopup(tkinter.ttk.Frame):
         self.master.popups.pop(self.master.popups.index(self))
         self.destroy()
 
-    def get_template_skin(self, arms):
-        arms = "slim" if arms else "classic"
-        with open("skins.json", "r") as fp:
-            return Image.open(
-                io.BytesIO(base64.b64decode(json.load(fp)["template"][arms]))
-            )
-
-    def get_default_skin(self, name, arms):
-        arms = "slim" if arms else "classic"
-        with open("skins.json", "r") as fp:
-            return Image.open(
-                io.BytesIO(base64.b64decode(json.load(fp)["default"][name][arms]))
-            )
-
     def update_preview(self):
         self.template_choice.select_clear()
         self.preview.slim = self.slim.get()
@@ -123,12 +109,12 @@ class NewPopup(tkinter.ttk.Frame):
         if self.template.get():
             self.template_choice.config(state="readonly")
             self.preview.set_skin(
-                self.get_default_skin(self.template_choice.get(), self.slim.get())
+                Editor.get_default_skin(self.template_choice.get(), self.slim.get())
             )
 
         else:
             self.template_choice.config(state="disabled")
-            self.preview.set_skin(self.get_template_skin(self.slim.get()))
+            self.preview.set_skin(Editor.get_template_skin(self.slim.get()))
 
     def show(self):
         self.place(anchor="c", relx=0.5, rely=0.5, width=400, height=350)
@@ -251,9 +237,9 @@ class Editor(tkinter.ttk.Frame):
             command=lambda: self.overlays_cb(self.overlay_left_pants),
         ).pack(anchor="w")
 
-        self.ortho = tkinter.IntVar(self, 0)
-
         tkinter.ttk.Separator(self.right_frame).pack(fill="x")
+
+        self.ortho = tkinter.IntVar(self, 0)
 
         tkinter.ttk.Checkbutton(
             self.right_frame,
@@ -261,6 +247,31 @@ class Editor(tkinter.ttk.Frame):
             variable=self.ortho,
             command=self.ortho_cb,
         ).pack(side="bottom", anchor="w")
+
+        self.show_grid = tkinter.IntVar(self, 1)
+
+        tkinter.ttk.Checkbutton(
+            self.right_frame,
+            text="Show Grid",
+            variable=self.show_grid,
+            command=self.show_grid_cb,
+        ).pack(side="bottom", anchor="w")
+
+    @staticmethod
+    def get_template_skin(arms):
+        arms = "slim" if arms else "classic"
+        with open("skins.json", "r") as fp:
+            return Image.open(
+                io.BytesIO(base64.b64decode(json.load(fp)["template"][arms]))
+            )
+
+    @staticmethod
+    def get_default_skin(name, arms):
+        arms = "slim" if arms else "classic"
+        with open("skins.json", "r") as fp:
+            return Image.open(
+                io.BytesIO(base64.b64decode(json.load(fp)["default"][name][arms]))
+            )
 
     def popup(self):
         p = NewPopup(self)
@@ -285,6 +296,7 @@ class Editor(tkinter.ttk.Frame):
             cape_img=cape,
             rot_y=-45,
             rot_x=35.264,
+            grid=True,
             width=550,
             height=500,
             background_color=self.background_color,
@@ -309,6 +321,7 @@ class Editor(tkinter.ttk.Frame):
         self.overlay_right_pants.set(self.view.show["right-pants"])
         self.overlay_left_pants.set(self.view.show["left-pants"])
         self.ortho.set(self.view.ortho)
+        self.show_grid.set(self.view.grid)
 
     def slim_cb(self):
         if self.view:
@@ -327,3 +340,7 @@ class Editor(tkinter.ttk.Frame):
     def ortho_cb(self):
         if self.view:
             self.view.ortho = self.ortho.get()
+
+    def show_grid_cb(self):
+        if self.view:
+            self.view.grid = self.show_grid.get()

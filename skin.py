@@ -60,6 +60,103 @@ class Box:
             np.array([-0.5, -0.5, -0.5, 1]),
         )
 
+        # for
+
+        self.grid = []
+
+        # grid lines wrapping x axis
+        for x in range(pix_x + 1):
+            # front
+            self.grid.append(
+                (
+                    self.vertices[0] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[1] + np.array([x / pix_x, 0, 0, 0]),
+                )
+            )
+            # back
+            self.grid.append(
+                (
+                    self.vertices[6] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[7] + np.array([x / pix_x, 0, 0, 0]),
+                )
+            )
+            # top
+            self.grid.append(
+                (
+                    self.vertices[1] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[6] + np.array([x / pix_x, 0, 0, 0]),
+                )
+            )
+            # bottom
+            self.grid.append(
+                (
+                    self.vertices[0] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[7] + np.array([x / pix_x, 0, 0, 0]),
+                )
+            )
+
+        # grid lines wrapping y axis
+        for y in range(pix_y + 1):
+            # front
+            self.grid.append(
+                (
+                    self.vertices[0] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[3] + np.array([0, y / pix_y, 0, 0]),
+                )
+            )
+            # back
+            self.grid.append(
+                (
+                    self.vertices[4] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[7] + np.array([0, y / pix_y, 0, 0]),
+                )
+            )
+            # right
+            self.grid.append(
+                (
+                    self.vertices[0] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[7] + np.array([0, y / pix_y, 0, 0]),
+                )
+            )
+            # left
+            self.grid.append(
+                (
+                    self.vertices[3] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[4] + np.array([0, y / pix_y, 0, 0]),
+                )
+            )
+
+        # grid lines wrapping z axis
+        for z in range(pix_z + 1):
+            # top
+            self.grid.append(
+                (
+                    self.vertices[5] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[6] + np.array([0, 0, z / pix_z, 0]),
+                )
+            )
+            # bottom
+            self.grid.append(
+                (
+                    self.vertices[4] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[7] + np.array([0, 0, z / pix_z, 0]),
+                )
+            )
+            # right
+            self.grid.append(
+                (
+                    self.vertices[6] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[7] + np.array([0, 0, z / pix_z, 0]),
+                )
+            )
+            # left
+            self.grid.append(
+                (
+                    self.vertices[4] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[5] + np.array([0, 0, z / pix_z, 0]),
+                )
+            )
+
         self.quads = (
             (  # front
                 0,
@@ -161,6 +258,7 @@ class SkinView(OpenGLFrame):
         skin_img: Image,
         cape_img: Image = None,
         exploded: bool = False,
+        grid: bool = False,
         dragable: bool = True,
         drag_speed: float = 0.4,
         move_speed: float = 0.1,
@@ -177,6 +275,7 @@ class SkinView(OpenGLFrame):
         self.ortho = ortho
 
         self.exploded = exploded
+        self.grid = grid
         self.slim = slim
 
         self.show = {
@@ -327,38 +426,60 @@ class SkinView(OpenGLFrame):
             glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
             glTexParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 
-        self.skin = [
-            # head body and legs
-            Box(0, 28, 0, 0, 33, 0, 8, 8, 8, 0, 24, 0, 0, 0, 0, 0, 0),
-            Box(0, 18, 0, 0, 18, 0, 8, 12, 4, 0, 24, 0, 0, 0, 0, 0.25, 0.25),
-            Box(-2, 6, 0, -4.5, 1, 0, 4, 12, 4, -1.9, 12, 0, 0, 0, 0, 0, 0.25),
-            Box(2, 6, 0, 4.5, 1, 0, 4, 12, 4, 1.9, 12, 0, 0, 0, 0, 0.25, 0.75),
-        ]
+        self.skin = {
+            "hat": Box(0, 28, 0, 0, 33, 0, 8, 8, 8, 0, 24, 0, 0, 0, 0, 0, 0),
+            "jacket": Box(0, 18, 0, 0, 18, 0, 8, 12, 4, 0, 24, 0, 0, 0, 0, 0.25, 0.25),
+            "right-pants": Box(
+                -2, 6, 0, -4.5, 1, 0, 4, 12, 4, -1.9, 12, 0, 0, 0, 0, 0, 0.25
+            ),
+            "left-pants": Box(
+                2, 6, 0, 4.5, 1, 0, 4, 12, 4, 1.9, 12, 0, 0, 0, 0, 0.25, 0.75
+            ),
+        }
 
         if self.slim:
-            self.skin += [
-                # arms
-                Box(
-                    -5.5,
-                    18,
-                    0,
-                    -10.5,
-                    18,
-                    0,
-                    3,
-                    12,
-                    4,
-                    -5,
-                    21.5,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0.625,
-                    0.25,
-                ),
-                Box(5.5, 18, 0, 10.5, 18, 0, 3, 12, 4, 5, 21.5, 0, 0, 0, 0, 0.5, 0.75),
-            ]
+            self.skin.update(
+                {
+                    "right-sleeve": Box(
+                        -5.5,
+                        18,
+                        0,
+                        -10.5,
+                        18,
+                        0,
+                        3,
+                        12,
+                        4,
+                        -5,
+                        21.5,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.625,
+                        0.25,
+                    ),
+                    "left-sleeve": Box(
+                        5.5,
+                        18,
+                        0,
+                        10.5,
+                        18,
+                        0,
+                        3,
+                        12,
+                        4,
+                        5,
+                        21.5,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0.5,
+                        0.75,
+                    ),
+                }
+            )
 
             self.skin_overlays.update(
                 {
@@ -406,11 +527,17 @@ class SkinView(OpenGLFrame):
             )
 
         else:
-            self.skin += [
-                # arms
-                Box(-6, 18, 0, -11, 18, 0, 4, 12, 4, -5, 22, 0, 0, 0, 0, 0.625, 0.25),
-                Box(6, 18, 0, 11, 18, 0, 4, 12, 4, 5, 22, 0, 0, 0, 0, 0.5, 0.75),
-            ]
+            self.skin.update(
+                {
+                    # arms
+                    "right-sleeve": Box(
+                        -6, 18, 0, -11, 18, 0, 4, 12, 4, -5, 22, 0, 0, 0, 0, 0.625, 0.25
+                    ),
+                    "left-sleeve": Box(
+                        6, 18, 0, 11, 18, 0, 4, 12, 4, 5, 22, 0, 0, 0, 0, 0.5, 0.75
+                    ),
+                }
+            )
 
             self.skin_overlays.update(
                 {
@@ -524,7 +651,7 @@ class SkinView(OpenGLFrame):
             for face in self.cape.quads:
                 for i in range(4):
                     glTexCoord2f(face[i * 2 + 4], face[i * 2 + 5] * 2)
-                    glVertex3fv((self.cape.vertices[face[i]])[:3])
+                    glVertex4fv((self.cape.vertices[face[i]]))
 
             glEnd()
             glPopMatrix()
@@ -532,7 +659,7 @@ class SkinView(OpenGLFrame):
         glBindTexture(GL_TEXTURE_2D, self.textures[0])
 
         # render skin
-        for box in self.skin:
+        for overlay, box in self.skin.items():
             glPushMatrix()
             glTranslatef(box.piv_x, box.piv_y, box.piv_z)
             glRotatef(box.rot_z, 0, 0, 1)
@@ -546,13 +673,28 @@ class SkinView(OpenGLFrame):
                 glTranslatef(box.pos_x, box.pos_y, box.pos_z)
 
             glScalef(box.scl_x, box.scl_y, box.scl_z)
+
             glBegin(GL_QUADS)
             for face in box.quads:
                 for i in range(4):
                     glTexCoord2f(face[i * 2 + 4], face[i * 2 + 5])
-                    glVertex3fv((box.vertices[face[i]])[:3])
+                    glVertex4fv((box.vertices[face[i]]))
 
             glEnd()
+
+            if self.grid and not self.show[overlay]:
+                glScalef(1.001, 1.001, 1.001)
+
+                glDisable(GL_TEXTURE_2D)
+                glColor3f(1, 1, 1)
+                glBegin(GL_LINES)
+                for line in box.grid:
+                    glVertex4fv(line[0])
+                    glVertex4fv(line[1])
+
+                glEnd()
+                glEnable(GL_TEXTURE_2D)
+
             glPopMatrix()
 
         # render overlays
@@ -575,13 +717,28 @@ class SkinView(OpenGLFrame):
                     glTranslatef(box.pos_x, box.pos_y, box.pos_z)
 
                 glScalef(box.scl_x, box.scl_y, box.scl_z)
+
                 glBegin(GL_QUADS)
                 for face in box.quads:
                     for i in range(4):
                         glTexCoord2f(face[i * 2 + 4], face[i * 2 + 5])
-                        glVertex3fv((box.vertices[face[i]])[:3])
+                        glVertex4fv((box.vertices[face[i]]))
 
                 glEnd()
+
+                if self.grid:
+                    glScalef(1.001, 1.001, 1.001)
+
+                    glDisable(GL_TEXTURE_2D)
+                    glColor3f(1, 1, 1)
+                    glBegin(GL_LINES)
+                    for line in box.grid:
+                        glVertex4fv(line[0])
+                        glVertex4fv(line[1])
+
+                    glEnd()
+                    glEnable(GL_TEXTURE_2D)
+
                 glPopMatrix()
 
         glDisable(GL_ALPHA_TEST)
