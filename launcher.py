@@ -1,22 +1,23 @@
-import base64
+from base64 import b64decode
 from datetime import datetime
-import io
-import json
-import pathlib
-import tkinter.ttk
-import uuid
+from io import BytesIO
+from json import dump, load, loads
+from pathlib import Path
+from subprocess import call
+from tkinter import Tk, ttk
+from uuid import uuid4
 
 from editor import Editor
 
 from PIL import Image, ImageTk
-import portablemc.standard
-import requests
-import sv_ttk
+from portablemc.standard import StreamRunner, XmlStreamEvent
+from requests import Session
+from sv_ttk import set_theme
 
 
-class Runner(portablemc.standard.StreamRunner):
+class Runner(StreamRunner):
     def process_stream_event(self, event):
-        if isinstance(event, portablemc.standard.XmlStreamEvent):
+        if isinstance(event, XmlStreamEvent):
             timestamp = datetime.fromtimestamp(event.time).strftime("%H:%M:%S")
             message = f"[{timestamp}] [{event.thread}/{event.level}] {event.message}"
 
@@ -37,7 +38,7 @@ class Runner(portablemc.standard.StreamRunner):
             print(event.strip())
 
 
-class LauncherApp(tkinter.Tk):
+class Launcher(Tk):
     default_jvm_args = [
         "-Xmx2G",
         "-XX:+UnlockExperimentalVMOptions",
@@ -60,11 +61,11 @@ class LauncherApp(tkinter.Tk):
         )
 
         # add toolbar
-        self.toolbar_frame = tkinter.ttk.Frame(self)
+        self.toolbar_frame = ttk.Frame(self)
         self.toolbar_frame.pack(fill="x")
 
         # add light/dark mode button
-        self.theme_button = tkinter.ttk.Button(
+        self.theme_button = ttk.Button(
             self.toolbar_frame,
             text="",
             command=self.toggle_theme,
@@ -73,33 +74,33 @@ class LauncherApp(tkinter.Tk):
         self.theme_button.pack(side="left", padx=5, pady=5)
 
         # tabbed page container
-        self.content_frame = tkinter.ttk.Notebook(self)
+        self.content_frame = ttk.Notebook(self)
         self.content_frame.pack(fill="both", expand=1)
 
         # add instances tab
-        self.instances_tab = tkinter.ttk.Frame(self.content_frame)
+        self.instances_tab = ttk.Frame(self.content_frame)
         self.content_frame.add(self.instances_tab, text="Instances")
 
         # add skin editor tab
         self.editor = Editor(self.content_frame)
         self.content_frame.add(self.editor, text="Skin Editor")
 
-        sv_ttk.set_theme("dark")
+        set_theme("dark")
         self.editor.set_background_color((0.15, 0.15, 0.15))
         self.theme_button.config(image=self.sun_image)
 
     def create_instance(self, name, version, loader=None, loader_version=None):
-        instance_id = str(uuid.uuid4())
-        root = pathlib.Path("instances") / instance_id
+        instance_id = str(uuid4())
+        root = Path("instances") / instance_id
         root.mkdir(parents=True, exist_ok=True)
 
-        file = pathlib.Path("config.json")
+        file = Path("config.json")
         if not file.exists():
-            conf = {"instances": []}
+            conf = {"java-instances": []}
 
         else:
             with file.open("r") as fp:
-                conf = json.load(fp)
+                conf = load(fp)
 
         loader_conf = {}
         if loader is not None:
@@ -108,7 +109,7 @@ class LauncherApp(tkinter.Tk):
                 if loader == "forge":
                     loader_conf["version"] = "recommended"
 
-        conf["instances"].append(
+        conf["java-instances"].append(
             {
                 "name": name,
                 "path": root.absolute(),
@@ -119,26 +120,58 @@ class LauncherApp(tkinter.Tk):
         )
 
         with file.open("w+") as fp:
-            json.dump(conf, fp)
+            dump(conf, fp)
+
+    @staticmethod
+    def start_bedrock():
+        call(
+            [
+                "explorer.exe",
+                "shell:AppsFolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!App",
+            ]
+        )
+
+    @staticmethod
+    def unregister_bedrock():
+        call(
+            [
+                "powershell.exe",
+                "Get-AppxPackage",
+                "Microsoft.MinecraftUWP",
+                "|",
+                "Remove-AppxPackage",
+                "-PreserveApplicationData",
+            ]
+        )
+
+    @staticmethod
+    def register_bedrock(path):
+        call(
+            [
+                "powershell.exe",
+                "Add-AppxPackage",
+                "-Path",
+                Path(path) / "AppxManifest.xml",
+                "-Register",
+            ]
+        )
 
     @staticmethod
     def get_skin(uuid: str):
         # fetch skin & cape from mojang api
-        with requests.Session() as s:
+        with Session() as s:
             response = s.get(
                 f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}"
             )
             if response.ok:
-                textures = json.loads(
-                    base64.b64decode(
-                        json.loads(response.content)["properties"][0]["value"]
-                    )
+                textures = loads(
+                    b64decode(loads(response.content)["properties"][0]["value"])
                 )["textures"]
 
                 try:
                     response = s.get(textures["SKIN"]["url"])
                     if response.ok:
-                        skin = Image.open(io.BytesIO(response.content))
+                        skin = Image.open(BytesIO(response.content))
 
                     else:
                         skin = None
@@ -149,7 +182,7 @@ class LauncherApp(tkinter.Tk):
                 try:
                     response = s.get(textures["CAPE"]["url"])
                     if response.ok:
-                        cape = Image.open(io.BytesIO(response.content))
+                        cape = Image.open(BytesIO(response.content))
 
                     else:
                         cape = None
@@ -182,4 +215,4 @@ class LauncherApp(tkinter.Tk):
 
 
 if __name__ == "__main__":
-    LauncherApp().mainloop()
+    Launcher().mainloop()
