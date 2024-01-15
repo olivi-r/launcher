@@ -1,14 +1,14 @@
-from ctypes import WinDLL
-from glob import glob
+import ctypes
+import glob
 import tkinter
 
 
 class Text:
     @staticmethod
     def install_fonts():
-        for path in glob("assets/fonts/*.otf"):
+        for path in glob.glob("assets/fonts/*.otf"):
             assert (
-                WinDLL("gdi32").AddFontResourceW(path) != 0
+                ctypes.WinDLL("gdi32").AddFontResourceW(path) != 0
             ), f"Failed to install: {path}"
 
     @staticmethod

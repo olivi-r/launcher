@@ -1,10 +1,10 @@
-import time
+import tkinter
 
-import numpy as np
+import numpy
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from PIL import Image
-from pyopengltk import OpenGLFrame
+import pyopengltk
 
 
 class Box:
@@ -28,7 +28,7 @@ class Box:
         u: float,
         v: float,
         inc: float = 0,
-    ):
+    ) -> None:
         self.pos_x = pos_x
         self.pos_y = pos_y
         self.pos_z = pos_z
@@ -50,14 +50,14 @@ class Box:
         self.rot_z = rot_z
 
         self.vertices = (
-            np.array([-0.5, -0.5, 0.5, 1]),
-            np.array([-0.5, 0.5, 0.5, 1]),
-            np.array([0.5, 0.5, 0.5, 1]),
-            np.array([0.5, -0.5, 0.5, 1]),
-            np.array([0.5, -0.5, -0.5, 1]),
-            np.array([0.5, 0.5, -0.5, 1]),
-            np.array([-0.5, 0.5, -0.5, 1]),
-            np.array([-0.5, -0.5, -0.5, 1]),
+            numpy.array([-0.5, -0.5, 0.5, 1]),
+            numpy.array([-0.5, 0.5, 0.5, 1]),
+            numpy.array([0.5, 0.5, 0.5, 1]),
+            numpy.array([0.5, -0.5, 0.5, 1]),
+            numpy.array([0.5, -0.5, -0.5, 1]),
+            numpy.array([0.5, 0.5, -0.5, 1]),
+            numpy.array([-0.5, 0.5, -0.5, 1]),
+            numpy.array([-0.5, -0.5, -0.5, 1]),
         )
 
         # for
@@ -69,29 +69,29 @@ class Box:
             # front
             self.grid.append(
                 (
-                    self.vertices[0] + np.array([x / pix_x, 0, 0, 0]),
-                    self.vertices[1] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[0] + numpy.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[1] + numpy.array([x / pix_x, 0, 0, 0]),
                 )
             )
             # back
             self.grid.append(
                 (
-                    self.vertices[6] + np.array([x / pix_x, 0, 0, 0]),
-                    self.vertices[7] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[6] + numpy.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[7] + numpy.array([x / pix_x, 0, 0, 0]),
                 )
             )
             # top
             self.grid.append(
                 (
-                    self.vertices[1] + np.array([x / pix_x, 0, 0, 0]),
-                    self.vertices[6] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[1] + numpy.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[6] + numpy.array([x / pix_x, 0, 0, 0]),
                 )
             )
             # bottom
             self.grid.append(
                 (
-                    self.vertices[0] + np.array([x / pix_x, 0, 0, 0]),
-                    self.vertices[7] + np.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[0] + numpy.array([x / pix_x, 0, 0, 0]),
+                    self.vertices[7] + numpy.array([x / pix_x, 0, 0, 0]),
                 )
             )
 
@@ -100,29 +100,29 @@ class Box:
             # front
             self.grid.append(
                 (
-                    self.vertices[0] + np.array([0, y / pix_y, 0, 0]),
-                    self.vertices[3] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[0] + numpy.array([0, y / pix_y, 0, 0]),
+                    self.vertices[3] + numpy.array([0, y / pix_y, 0, 0]),
                 )
             )
             # back
             self.grid.append(
                 (
-                    self.vertices[4] + np.array([0, y / pix_y, 0, 0]),
-                    self.vertices[7] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[4] + numpy.array([0, y / pix_y, 0, 0]),
+                    self.vertices[7] + numpy.array([0, y / pix_y, 0, 0]),
                 )
             )
             # right
             self.grid.append(
                 (
-                    self.vertices[0] + np.array([0, y / pix_y, 0, 0]),
-                    self.vertices[7] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[0] + numpy.array([0, y / pix_y, 0, 0]),
+                    self.vertices[7] + numpy.array([0, y / pix_y, 0, 0]),
                 )
             )
             # left
             self.grid.append(
                 (
-                    self.vertices[3] + np.array([0, y / pix_y, 0, 0]),
-                    self.vertices[4] + np.array([0, y / pix_y, 0, 0]),
+                    self.vertices[3] + numpy.array([0, y / pix_y, 0, 0]),
+                    self.vertices[4] + numpy.array([0, y / pix_y, 0, 0]),
                 )
             )
 
@@ -131,29 +131,29 @@ class Box:
             # top
             self.grid.append(
                 (
-                    self.vertices[5] + np.array([0, 0, z / pix_z, 0]),
-                    self.vertices[6] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[5] + numpy.array([0, 0, z / pix_z, 0]),
+                    self.vertices[6] + numpy.array([0, 0, z / pix_z, 0]),
                 )
             )
             # bottom
             self.grid.append(
                 (
-                    self.vertices[4] + np.array([0, 0, z / pix_z, 0]),
-                    self.vertices[7] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[4] + numpy.array([0, 0, z / pix_z, 0]),
+                    self.vertices[7] + numpy.array([0, 0, z / pix_z, 0]),
                 )
             )
             # right
             self.grid.append(
                 (
-                    self.vertices[6] + np.array([0, 0, z / pix_z, 0]),
-                    self.vertices[7] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[6] + numpy.array([0, 0, z / pix_z, 0]),
+                    self.vertices[7] + numpy.array([0, 0, z / pix_z, 0]),
                 )
             )
             # left
             self.grid.append(
                 (
-                    self.vertices[4] + np.array([0, 0, z / pix_z, 0]),
-                    self.vertices[5] + np.array([0, 0, z / pix_z, 0]),
+                    self.vertices[4] + numpy.array([0, 0, z / pix_z, 0]),
+                    self.vertices[5] + numpy.array([0, 0, z / pix_z, 0]),
                 )
             )
 
@@ -245,18 +245,13 @@ class Box:
         )
 
 
-class Overlay:
-    def __init__(self, for_: dict, expand: float = 0.5):
-        pass
-
-
-class SkinView(OpenGLFrame):
+class SkinView(pyopengltk.OpenGLFrame):
     def __init__(
         self,
         *args,
-        slim,
-        skin_img: Image,
-        cape_img: Image = None,
+        slim: bool,
+        skin_img: Image.Image,
+        cape_img: Image.Image = None,
         exploded: bool = False,
         grid: bool = False,
         dragable: bool = True,
@@ -322,7 +317,7 @@ class SkinView(OpenGLFrame):
         if self.has_cape:
             try:
                 self.cape_img = cape_img.size + (
-                    np.array(list(cape_img.convert("RGBA").getdata()), np.uint8),
+                    numpy.array(list(cape_img.convert("RGBA").getdata()), numpy.uint8),
                 )
 
             finally:
@@ -334,6 +329,7 @@ class SkinView(OpenGLFrame):
             self.bind("<MouseWheel>", self.scroll)
             self.bind("<Button-3>", self.set_pos)
             self.bind("<B3-Motion>", self.move)
+            self.bind("<Motion>", self.set_pos)
 
         self.drag_speed = drag_speed
         self.move_speed = move_speed
@@ -353,37 +349,37 @@ class SkinView(OpenGLFrame):
 
         self.walk_speed = 20
 
-    def set_skin(self, skin_img):
+    def set_skin(self, skin_img: Image.Image) -> None:
         try:
             self.skin_img = skin_img.size + (
-                np.array(list(skin_img.convert("RGBA").getdata()), np.uint8),
+                numpy.array(list(skin_img.convert("RGBA").getdata()), numpy.uint8),
             )
 
         finally:
             skin_img.close()
 
-    def set_pos(self, event):
+    def set_pos(self, event: tkinter.Event) -> None:
         self.prev = [event.x, event.y]
 
-    def drag(self, event):
+    def drag(self, event: tkinter.Event) -> None:
         self.drag_x = event.x - self.prev[0]
         self.drag_y = event.y - self.prev[1]
         self.prev = [event.x, event.y]
 
-    def scroll(self, event):
+    def scroll(self, event: tkinter.Event) -> None:
         self.zoom += event.delta / 800
         self.zoom = min(5, max(0.25, self.zoom))
 
-    def move(self, event):
+    def move(self, event: tkinter.Event) -> None:
         self.move_x = event.x - self.prev[0]
         self.move_y = event.y - self.prev[1]
         self.prev = [event.x, event.y]
 
-    def initgl(self):
+    def initgl(self) -> None:
         glEnable(GL_TEXTURE_2D)
         glEnable(GL_DEPTH_TEST)
 
-    def redraw(self):
+    def redraw(self) -> None:
         glViewport(0, 0, self.width, self.height)
 
         self.textures = glGenTextures(2)
@@ -632,6 +628,17 @@ class SkinView(OpenGLFrame):
         # clear frame
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        # get mouse vector
+        proj = glGetFloatv(GL_PROJECTION_MATRIX)
+        x = 2 * self.prev[0] / self.width - 1
+        y = 1 - 2 * self.prev[1] / self.width
+        ray_eye = numpy.linalg.inv(proj) @ numpy.array([x, y, -1, 1])
+        ray_eye /= numpy.linalg.norm(ray_eye[:3])
+        ray_eye[3] = 1
+        view = glGetFloatv(GL_MODELVIEW_MATRIX)
+        ray_world = (numpy.linalg.inv(view) @ ray_eye)[:3]
+        ray_world /= numpy.linalg.norm(ray_world)
+
         # render cape
         if self.has_cape and self.show_cape:
             glBindTexture(GL_TEXTURE_2D, self.textures[1])
@@ -646,6 +653,7 @@ class SkinView(OpenGLFrame):
 
             else:
                 glTranslatef(self.cape.pos_x, self.cape.pos_y, self.cape.pos_z)
+
             glScalef(self.cape.scl_x, self.cape.scl_y, self.cape.scl_z)
             glBegin(GL_QUADS)
             for face in self.cape.quads:
@@ -673,7 +681,6 @@ class SkinView(OpenGLFrame):
                 glTranslatef(box.pos_x, box.pos_y, box.pos_z)
 
             glScalef(box.scl_x, box.scl_y, box.scl_z)
-
             glBegin(GL_QUADS)
             for face in box.quads:
                 for i in range(4):
@@ -681,10 +688,8 @@ class SkinView(OpenGLFrame):
                     glVertex4fv((box.vertices[face[i]]))
 
             glEnd()
-
             if self.grid and not self.show[overlay]:
                 glScalef(1.001, 1.001, 1.001)
-
                 glDisable(GL_TEXTURE_2D)
                 glColor3f(1, 1, 1)
                 glBegin(GL_LINES)
@@ -717,7 +722,6 @@ class SkinView(OpenGLFrame):
                     glTranslatef(box.pos_x, box.pos_y, box.pos_z)
 
                 glScalef(box.scl_x, box.scl_y, box.scl_z)
-
                 glBegin(GL_QUADS)
                 for face in box.quads:
                     for i in range(4):
@@ -725,10 +729,8 @@ class SkinView(OpenGLFrame):
                         glVertex4fv((box.vertices[face[i]]))
 
                 glEnd()
-
                 if self.grid:
                     glScalef(1.001, 1.001, 1.001)
-
                     glDisable(GL_TEXTURE_2D)
                     glColor3f(1, 1, 1)
                     glBegin(GL_LINES)

@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageTk
 
 
 class ColorPicker(tkinter.ttk.Frame):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.hue = 0
@@ -132,7 +132,7 @@ class ColorPicker(tkinter.ttk.Frame):
 
         self.update()
 
-    def _hex_value_cb(self, var):
+    def _hex_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             value = var.get()
             m = re.match(r"#?(?P<value>([0-9a-fA-F]{6}|[0-9a-fA-F]{3}))?$", value)
@@ -159,7 +159,7 @@ class ColorPicker(tkinter.ttk.Frame):
 
                 self.update()
 
-    def _red_value_cb(self, var):
+    def _red_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             value = var.get()
             m = re.match(r"[0-9]*$", value)
@@ -178,7 +178,7 @@ class ColorPicker(tkinter.ttk.Frame):
 
                     self.update()
 
-    def _green_value_cb(self, var):
+    def _green_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             value = var.get()
             m = re.match(r"[0-9]*$", value)
@@ -197,7 +197,7 @@ class ColorPicker(tkinter.ttk.Frame):
 
                     self.update()
 
-    def _blue_value_cb(self, var):
+    def _blue_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             value = var.get()
             m = re.match(r"[0-9]*$", value)
@@ -216,7 +216,7 @@ class ColorPicker(tkinter.ttk.Frame):
 
                     self.update()
 
-    def _hue_value_cb(self, var):
+    def _hue_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             m = re.match(r"(?P<value>[0-9]*)°?$", var.get())
             if m:
@@ -231,7 +231,7 @@ class ColorPicker(tkinter.ttk.Frame):
                     self.hue = value / 360
                     self.update()
 
-    def _hsl_s_value_cb(self, var):
+    def _hsl_s_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             m = re.match(r"(?P<value>[0-9]*)%?$", var.get())
             if m:
@@ -246,7 +246,7 @@ class ColorPicker(tkinter.ttk.Frame):
                     self.saturation = value / 100
                     self.update()
 
-    def _hsl_l_value_cb(self, var):
+    def _hsl_l_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             m = re.match(r"(?P<value>[0-9]*)%?$", var.get())
             if m:
@@ -261,7 +261,7 @@ class ColorPicker(tkinter.ttk.Frame):
                     self.lightness = value / 100
                     self.update()
 
-    def _hsv_s_value_cb(self, var):
+    def _hsv_s_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             m = re.match(r"(?P<value>[0-9]*)%?$", var.get())
             if m:
@@ -282,7 +282,7 @@ class ColorPicker(tkinter.ttk.Frame):
 
                     self.update()
 
-    def _hsv_v_value_cb(self, var):
+    def _hsv_v_value_cb(self, var: tkinter.StringVar) -> None:
         if not self.disable_cb:
             m = re.match(r"(?P<value>[0-9]*)%?$", var.get())
             if m:
@@ -304,7 +304,7 @@ class ColorPicker(tkinter.ttk.Frame):
                     self.update()
 
     @property
-    def color(self):
+    def color(self) -> str:
         c = "#%02X%02X%02X" % tuple(
             map(
                 lambda x: round(x * 255),
@@ -316,7 +316,7 @@ class ColorPicker(tkinter.ttk.Frame):
 
         return c
 
-    def update(self):
+    def update(self) -> None:
         self.disable_cb = True
 
         # update circle
@@ -387,11 +387,11 @@ class ColorPicker(tkinter.ttk.Frame):
 
         self.disable_cb = False
 
-    def _ev_hue(self, event):
+    def _ev_hue(self, event: tkinter.Event) -> None:
         self.hue = min(200, max(0, event.x)) / 200
         self.update()
 
-    def _ev_square(self, event):
+    def _ev_square(self, event: tkinter.Event) -> None:
         saturation = min(200, max(0, event.x)) / 200
         value = min(150, max(0, 150 - event.y)) / 150
         _, self.lightness, self.saturation = colorsys.rgb_to_hls(
