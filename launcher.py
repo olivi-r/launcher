@@ -188,7 +188,7 @@ class Launcher(tkinter.Tk):
                 fp.write(response.content)
 
     @staticmethod
-    def download_appx(version_uuid: str, root: pathlib.Path) -> pathlib.Path:
+    def download_appx(version_uuid: str, root: str) -> pathlib.Path:
         # configure namespaces
         soap = "{http://www.w3.org/2003/05/soap-envelope}"
         addressing = "{http://www.w3.org/2005/08/addressing}"
@@ -297,6 +297,10 @@ class Launcher(tkinter.Tk):
                     "ns": "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService"
                 },
             )
+            assert len(
+                urls
+            ), f'No versions matching "{version_uuid}" could be retrieved'
+
             for url in urls:
                 # iterate response files, ignore block map for now (TODO: verify signatures)
                 response = s.get(url.text, stream=True)
