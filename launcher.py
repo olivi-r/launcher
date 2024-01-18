@@ -6,12 +6,15 @@ import pathlib
 import subprocess
 import tkinter
 import uuid
+import zipfile
 
 import editor
 
-from lxml import etree
-from PIL import Image, ImageTk
+import lxml.etree
+import PIL.Image
+import PIL.ImageTk
 import portablemc.standard
+import pyrfc6266
 import requests
 import sv_ttk
 import urllib3.exceptions
@@ -55,11 +58,11 @@ class Launcher(tkinter.Tk):
         super().__init__(*args, **kwargs)
 
         # load light/dark mode icons
-        self.sun_image = ImageTk.PhotoImage(
-            Image.open("assets/sun.png").resize((20, 20))
+        self.sun_image = PIL.ImageTk.PhotoImage(
+            PIL.Image.open("assets/sun.png").resize((20, 20))
         )
-        self.moon_image = ImageTk.PhotoImage(
-            Image.open("assets/moon.png").resize((20, 20))
+        self.moon_image = PIL.ImageTk.PhotoImage(
+            PIL.Image.open("assets/moon.png").resize((20, 20))
         )
 
         # add toolbar
@@ -95,16 +98,18 @@ class Launcher(tkinter.Tk):
         self.editor.set_background_color((0.15, 0.15, 0.15))
         self.theme_button.config(image=self.sun_image)
 
-    def create_instance(
+    def create_java_instance(
         self, name: str, version: str, loader: str = None, loader_version: str = None
-    ) -> None:
+    ) -> str:
         instance_id = str(uuid.uuid4())
-        root = pathlib.Path("instances") / instance_id
-        root.mkdir(parents=True, exist_ok=True)
+        instances = pathlib.Path("instances")
+        instances.mkdir(exist_ok=True)
+        root = instances / instance_id
+        root.mkdir()
 
         file = pathlib.Path("config.json")
         if not file.exists():
-            conf = {"java-instances": []}
+            conf = {"java-instances": [], "bedrock-instances": []}
 
         else:
             with file.open("r") as fp:
@@ -120,7 +125,7 @@ class Launcher(tkinter.Tk):
         conf["java-instances"].append(
             {
                 "name": name,
-                "path": root.absolute(),
+                "path": str(root.absolute()),
                 "version": version,
                 "loader": loader_conf,
                 "jvm_args": self.default_jvm_args,
@@ -128,14 +133,52 @@ class Launcher(tkinter.Tk):
         )
 
         with file.open("w+") as fp:
-            json.dump(conf, fp)
+            json.dump(conf, fp, indent=2)
+
+        return instance_id
+
+    @staticmethod
+    def create_bedrock_instance(name: str, version_uuid: str) -> str:
+        instance_id = str(uuid.uuid4())
+        instances = pathlib.Path("instances")
+        instances.mkdir(exist_ok=True)
+        root = instances / instance_id
+        root.mkdir()
+
+        file = pathlib.Path("config.json")
+        if not file.exists():
+            conf = {"java-instances": [], "bedrock-instances": []}
+
+        else:
+            with file.open("r") as fp:
+                conf = json.load(fp)
+
+        conf["bedrock-instances"].append(
+            {"name": name, "path": str(root.absolute()), "version": version_uuid}
+        )
+
+        with file.open("w+") as fp:
+            json.dump(conf, fp, indent=2)
+
+        downloaded = Launcher.download_appx(version_uuid, root)
+
+        (root / "data").mkdir()
+        with zipfile.ZipFile(downloaded) as zf:
+            zf.extractall(root / "package")
+
+        pathlib.Path.unlink(downloaded)
+
+        # cannot sideload signed apps
+        pathlib.Path.unlink(root / "package/AppxSignature.p7x")
+
+        return instance_id
 
     @staticmethod
     def launch_dev_settings() -> None:
         subprocess.call(["start", "ms-settings:developers"])
 
     @staticmethod
-    def download_appx(uuid: str, output_file: str) -> None:
+    def download_appx(version_uuid: str, root: pathlib.Path) -> pathlib.Path:
         # configure namespaces
         soap = "{http://www.w3.org/2003/05/soap-envelope}"
         addressing = "{http://www.w3.org/2005/08/addressing}"
@@ -152,69 +195,75 @@ class Launcher(tkinter.Tk):
         time_expires = datetime.timedelta(minutes=5) + time_created
 
         # build request
-        envelope = etree.Element(soap + "Envelope", {})
-        header = etree.SubElement(envelope, soap + "Header")
-        etree.SubElement(
+        envelope = lxml.etree.Element(soap + "Envelope", {})
+        header = lxml.etree.SubElement(envelope, soap + "Header")
+        lxml.etree.SubElement(
             header, addressing + "Action", {soap + "mustUnderstand": "1"}
         ).text = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtendedUpdateInfo2"
-        etree.SubElement(
+        lxml.etree.SubElement(
             header, addressing + "MessageID"
-        ).text = "urn:uuid:af2aea53-49b2-4af5-b6df-80f78143023b"
-        etree.SubElement(
+        ).text = f"urn:uuid:{uuid.uuid4()}"
+        lxml.etree.SubElement(
             header, addressing + "To", {soap + "mustUnderstand": "1"}
         ).text = (
             "https://fe3.delivery.mp.microsoft.com/ClientWebService/client.asmx/secured"
         )
-        security = etree.SubElement(
+        security = lxml.etree.SubElement(
             header, secext + "Security", {soap + "mustUnderstand": "1"}
         )
-        timestamp = etree.SubElement(
+        timestamp = lxml.etree.SubElement(
             security,
             wssecurity + "Timestamp",
         )
-        etree.SubElement(timestamp, wssecurity + "Created").text = (
+        lxml.etree.SubElement(timestamp, wssecurity + "Created").text = (
             time_created.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-4] + "Z"
         )
-        etree.SubElement(timestamp, wssecurity + "Expires").text = (
+        lxml.etree.SubElement(timestamp, wssecurity + "Expires").text = (
             time_expires.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-4] + "Z"
         )
-        windows_update_tickets_token = etree.SubElement(
+        windows_update_tickets_token = lxml.etree.SubElement(
             security,
             authorization + "WindowsUpdateTicketsToken",
             {wssecurity + "id": "ClientMSA"},
         )
-        etree.SubElement(
+        lxml.etree.SubElement(
             windows_update_tickets_token,
             "TicketType",
             {"Name": "AAD", "Version": "1.0", "Policy": "MBI_SSL"},
         ).text = ""
-        body = etree.SubElement(envelope, soap + "Body")
-        get_extended_update_info_2 = etree.SubElement(
+        body = lxml.etree.SubElement(envelope, soap + "Body")
+        get_extended_update_info_2 = lxml.etree.SubElement(
             body, service + "GetExtendedUpdateInfo2"
         )
-        update_ids = etree.SubElement(get_extended_update_info_2, service + "updateIDs")
-        update_identity = etree.SubElement(update_ids, service + "UpdateIdentity")
-        etree.SubElement(update_identity, service + "UpdateID").text = uuid
-        etree.SubElement(update_identity, service + "RevisionNumber").text = "1"
-        info_types = etree.SubElement(get_extended_update_info_2, service + "infoTypes")
-        etree.SubElement(info_types, service + "XmlUpdateFragmentType").text = "FileUrl"
-        etree.SubElement(
+        update_ids = lxml.etree.SubElement(
+            get_extended_update_info_2, service + "updateIDs"
+        )
+        update_identity = lxml.etree.SubElement(update_ids, service + "UpdateIdentity")
+        lxml.etree.SubElement(update_identity, service + "UpdateID").text = version_uuid
+        lxml.etree.SubElement(update_identity, service + "RevisionNumber").text = "1"
+        info_types = lxml.etree.SubElement(
+            get_extended_update_info_2, service + "infoTypes"
+        )
+        lxml.etree.SubElement(
+            info_types, service + "XmlUpdateFragmentType"
+        ).text = "FileUrl"
+        lxml.etree.SubElement(
             info_types, service + "XmlUpdateFragmentType"
         ).text = "FileDecryption"
-        etree.SubElement(
+        lxml.etree.SubElement(
             info_types, service + "XmlUpdateFragmentType"
         ).text = "EsrpDecryptionInformation"
-        etree.SubElement(
+        lxml.etree.SubElement(
             info_types, service + "XmlUpdateFragmentType"
         ).text = "PiecesHashUrl"
-        etree.SubElement(
+        lxml.etree.SubElement(
             info_types, service + "XmlUpdateFragmentType"
         ).text = "BlockMapUrl"
-        etree.SubElement(
+        lxml.etree.SubElement(
             get_extended_update_info_2, service + "deviceAttributes"
         ).text = "E:BranchReadinessLevel=CBB&DchuNvidiaGrfxExists=1&ProcessorIdentifier=Intel64%20Family%206%20Model%2063%20Stepping%202&CurrentBranch=rs4_release&DataVer_RS5=1942&FlightRing=Retail&AttrDataVer=57&InstallLanguage=en-US&DchuAmdGrfxExists=1&OSUILocale=en-US&InstallationType=Client&FlightingBranchName=&Version_RS5=10&UpgEx_RS5=Green&GStatus_RS5=2&OSSkuId=48&App=WU&InstallDate=1529700913&ProcessorManufacturer=GenuineIntel&AppVer=10.0.17134.471&OSArchitecture=AMD64&UpdateManagementGroup=2&IsDeviceRetailDemo=0&HidOverGattReg=C%3A%5CWINDOWS%5CSystem32%5CDriverStore%5CFileRepository%5Chidbthle.inf_amd64_467f181075371c89%5CMicrosoft.Bluetooth.Profiles.HidOverGatt.dll&IsFlightingEnabled=0&DchuIntelGrfxExists=1&TelemetryLevel=1&DefaultUserRegion=244&DeferFeatureUpdatePeriodInDays=365&Bios=Unknown&WuClientVer=10.0.17134.471&PausedFeatureStatus=1&Steam=URL%3Asteam%20protocol&Free=8to16&OSVersion=10.0.17134.472&DeviceFamily=Windows.Desktop"
 
-        payload = etree.tostring(envelope, pretty_print=1).decode()
+        payload = lxml.etree.tostring(envelope).decode()
 
         requests.packages.urllib3.disable_warnings(
             category=urllib3.exceptions.InsecureRequestWarning
@@ -231,19 +280,28 @@ class Launcher(tkinter.Tk):
             )
 
             response.raise_for_status()
-            new = etree.fromstring(response.content)
-            url = new.xpath(
+            new = lxml.etree.fromstring(response.content)
+            urls = new.xpath(
                 "//ns:Url",
                 namespaces={
                     "ns": "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService"
                 },
-            )[0].text
+            )
+            for url in urls:
+                # iterate response files, ignore block map for now (TODO: verify signatures)
+                response = s.get(url.text, stream=True)
+                response.raise_for_status()
+                filename = root / pathlib.Path(
+                    pyrfc6266.requests_response_to_filename(response)
+                )
+                if filename.suffix.lower() == ".appx":
+                    with filename.open("wb+") as fp:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            fp.write(chunk)
 
-            response = s.get(url, stream=True)
-            response.raise_for_status()
-            with open(output_file, "wb+") as fp:
-                for chunk in response.iter_content(chunk_size=8192):
-                    fp.write(chunk)
+                    break
+
+            return filename
 
     @staticmethod
     def start_bedrock() -> None:
@@ -274,17 +332,17 @@ class Launcher(tkinter.Tk):
                 "powershell.exe",
                 "Add-AppxPackage",
                 "-Path",
-                pathlib.Path(path) / "AppxManifest.xml",
+                pathlib.Path(path) / "package/AppxManifest.xml",
                 "-Register",
             ]
         )
 
     @staticmethod
-    def get_skin(uuid: str) -> tuple:
+    def get_skin(player_uuid: str) -> tuple:
         # fetch skin & cape from mojang api
         with requests.Session() as s:
             response = s.get(
-                f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}"
+                f"https://sessionserver.mojang.com/session/minecraft/profile/{player_uuid}"
             )
             if response.ok:
                 textures = json.loads(
@@ -296,7 +354,7 @@ class Launcher(tkinter.Tk):
                 try:
                     response = s.get(textures["SKIN"]["url"])
                     if response.ok:
-                        skin = Image.open(io.BytesIO(response.content))
+                        skin = PIL.Image.open(io.BytesIO(response.content))
 
                     else:
                         skin = None
@@ -307,7 +365,7 @@ class Launcher(tkinter.Tk):
                 try:
                     response = s.get(textures["CAPE"]["url"])
                     if response.ok:
-                        cape = Image.open(io.BytesIO(response.content))
+                        cape = PIL.Image.open(io.BytesIO(response.content))
 
                     else:
                         cape = None
@@ -318,14 +376,12 @@ class Launcher(tkinter.Tk):
         return skin, cape
 
     @staticmethod
-    def get_face(skin: Image.Image) -> Image.Image:
+    def get_face(skin: PIL.Image.Image) -> PIL.Image.Image:
         # get face of skin with overlays
-        face = skin.crop((8, 8, 16, 16)).resize((64, 64), Image.Resampling.NEAREST)
-        overlay = skin.crop((40, 8, 48, 16)).resize((72, 72), Image.Resampling.NEAREST)
-        out = Image.new("RGBA", (72, 72))
-        out.paste(face, (4, 4))
-        out.paste(overlay, (0, 0), overlay)
-        return out
+        face = skin.crop((8, 8, 16, 16))
+        overlay = skin.crop((40, 8, 48, 16))
+        face.paste(overlay, (0, 0), overlay)
+        return face
 
     def toggle_theme(self) -> None:
         if self.tk.call("ttk::style", "theme", "use") == "sun-valley-dark":
@@ -340,4 +396,4 @@ class Launcher(tkinter.Tk):
 
 
 if __name__ == "__main__":
-    Launcher.mainloop()
+    Launcher().mainloop()
