@@ -178,6 +178,16 @@ class Launcher(tkinter.Tk):
         subprocess.call(["start", "ms-settings:developers"])
 
     @staticmethod
+    def download_versions() -> None:
+        with requests.Session() as s:
+            response = s.get(
+                "https://github.com/MCMrARM/mc-w10-versiondb/raw/master/versions.json.min"
+            )
+            response.raise_for_status()
+            with open("versions.json", "wb+") as fp:
+                fp.write(response.content)
+
+    @staticmethod
     def download_appx(version_uuid: str, root: pathlib.Path) -> pathlib.Path:
         # configure namespaces
         soap = "{http://www.w3.org/2003/05/soap-envelope}"

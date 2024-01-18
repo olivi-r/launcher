@@ -1,5 +1,6 @@
+versions.json
 __pycache__
+config.json
 .minecraft
 instances
-config.json
 .env
