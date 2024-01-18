@@ -3,7 +3,7 @@ import tkinter
 import numpy
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from PIL import Image
+import PIL.Image
 import pyopengltk
 
 
@@ -250,8 +250,8 @@ class SkinView(pyopengltk.OpenGLFrame):
         self,
         *args,
         slim: bool,
-        skin_img: Image.Image,
-        cape_img: Image.Image = None,
+        skin_img: PIL.Image.Image,
+        cape_img: PIL.Image.Image = None,
         exploded: bool = False,
         grid: bool = False,
         dragable: bool = True,
@@ -349,7 +349,7 @@ class SkinView(pyopengltk.OpenGLFrame):
 
         self.walk_speed = 20
 
-    def set_skin(self, skin_img: Image.Image) -> None:
+    def set_skin(self, skin_img: PIL.Image.Image) -> None:
         try:
             self.skin_img = skin_img.size + (
                 numpy.array(list(skin_img.convert("RGBA").getdata()), numpy.uint8),
