@@ -210,9 +210,9 @@ class Launcher(tkinter.Tk):
         lxml.etree.SubElement(
             header, addressing + "Action", {soap + "mustUnderstand": "1"}
         ).text = "http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService/GetExtendedUpdateInfo2"
-        lxml.etree.SubElement(
-            header, addressing + "MessageID"
-        ).text = f"urn:uuid:{uuid.uuid4()}"
+        lxml.etree.SubElement(header, addressing + "MessageID").text = (
+            f"urn:uuid:{uuid.uuid4()}"
+        )
         lxml.etree.SubElement(
             header, addressing + "To", {soap + "mustUnderstand": "1"}
         ).text = (
@@ -254,21 +254,21 @@ class Launcher(tkinter.Tk):
         info_types = lxml.etree.SubElement(
             get_extended_update_info_2, service + "infoTypes"
         )
-        lxml.etree.SubElement(
-            info_types, service + "XmlUpdateFragmentType"
-        ).text = "FileUrl"
-        lxml.etree.SubElement(
-            info_types, service + "XmlUpdateFragmentType"
-        ).text = "FileDecryption"
-        lxml.etree.SubElement(
-            info_types, service + "XmlUpdateFragmentType"
-        ).text = "EsrpDecryptionInformation"
-        lxml.etree.SubElement(
-            info_types, service + "XmlUpdateFragmentType"
-        ).text = "PiecesHashUrl"
-        lxml.etree.SubElement(
-            info_types, service + "XmlUpdateFragmentType"
-        ).text = "BlockMapUrl"
+        lxml.etree.SubElement(info_types, service + "XmlUpdateFragmentType").text = (
+            "FileUrl"
+        )
+        lxml.etree.SubElement(info_types, service + "XmlUpdateFragmentType").text = (
+            "FileDecryption"
+        )
+        lxml.etree.SubElement(info_types, service + "XmlUpdateFragmentType").text = (
+            "EsrpDecryptionInformation"
+        )
+        lxml.etree.SubElement(info_types, service + "XmlUpdateFragmentType").text = (
+            "PiecesHashUrl"
+        )
+        lxml.etree.SubElement(info_types, service + "XmlUpdateFragmentType").text = (
+            "BlockMapUrl"
+        )
         lxml.etree.SubElement(
             get_extended_update_info_2, service + "deviceAttributes"
         ).text = "E:BranchReadinessLevel=CBB&DchuNvidiaGrfxExists=1&ProcessorIdentifier=Intel64%20Family%206%20Model%2063%20Stepping%202&CurrentBranch=rs4_release&DataVer_RS5=1942&FlightRing=Retail&AttrDataVer=57&InstallLanguage=en-US&DchuAmdGrfxExists=1&OSUILocale=en-US&InstallationType=Client&FlightingBranchName=&Version_RS5=10&UpgEx_RS5=Green&GStatus_RS5=2&OSSkuId=48&App=WU&InstallDate=1529700913&ProcessorManufacturer=GenuineIntel&AppVer=10.0.17134.471&OSArchitecture=AMD64&UpdateManagementGroup=2&IsDeviceRetailDemo=0&HidOverGattReg=C%3A%5CWINDOWS%5CSystem32%5CDriverStore%5CFileRepository%5Chidbthle.inf_amd64_467f181075371c89%5CMicrosoft.Bluetooth.Profiles.HidOverGatt.dll&IsFlightingEnabled=0&DchuIntelGrfxExists=1&TelemetryLevel=1&DefaultUserRegion=244&DeferFeatureUpdatePeriodInDays=365&Bios=Unknown&WuClientVer=10.0.17134.471&PausedFeatureStatus=1&Steam=URL%3Asteam%20protocol&Free=8to16&OSVersion=10.0.17134.472&DeviceFamily=Windows.Desktop"

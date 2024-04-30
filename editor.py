@@ -224,9 +224,9 @@ class Editor(tkinter.ttk.Frame):
 
     def overlays_cb(self, var: tkinter.IntVar) -> None:
         if self.view:
-            self.view.show[
-                self.overlay_lookup[self.overlay_lookup.index(var) + 1]
-            ] = var.get()
+            self.view.show[self.overlay_lookup[self.overlay_lookup.index(var) + 1]] = (
+                var.get()
+            )
 
     def ortho_cb(self) -> None:
         if self.view:
