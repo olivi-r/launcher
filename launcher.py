@@ -18,6 +18,7 @@ import pyrfc6266
 import requests
 import sv_ttk
 import urllib3.exceptions
+import win32com.shell.shell
 
 
 class Runner(portablemc.standard.StreamRunner):
@@ -337,6 +338,14 @@ class Launcher(tkinter.Tk):
                 "Remove-AppxPackage",
                 "-PreserveApplicationData",
             ]
+        )
+
+    @staticmethod
+    def root_unregister_bedrock() -> None:
+        win32com.shell.shell.ShellExecuteEx(
+            lpVerb="runas",
+            lpFile="powershell.exe",
+            lpParameters="Get-AppxPackage -All Microsoft.MinecraftUWP | Remove-AppxPackage",
         )
 
     @staticmethod
