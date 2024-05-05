@@ -345,7 +345,7 @@ class Launcher(tkinter.Tk):
         win32com.shell.shell.ShellExecuteEx(
             lpVerb="runas",
             lpFile="powershell.exe",
-            lpParameters="Get-AppxPackage -All Microsoft.MinecraftUWP | Remove-AppxPackage",
+            lpParameters="Get-AppxPackage -All Microsoft.MinecraftUWP | Remove-AppxPackage -AllUsers",
         )
 
     @staticmethod
